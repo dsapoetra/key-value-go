@@ -11,6 +11,7 @@ import (
 	"sync"
 )
 
+// [Previous type definitions and struct definitions remain the same...]
 // AttributeType represents the possible data types for attribute values
 type AttributeType int
 
@@ -32,6 +33,7 @@ type Store struct {
 	mutex          sync.RWMutex
 }
 
+// [Previous helper functions and methods remain the same...]
 // NewStore creates a new instance of the key-value store
 func NewStore() *Store {
 	return &Store{
@@ -150,15 +152,37 @@ func formatValue(value interface{}) string {
 	return fmt.Sprintf("%v", value)
 }
 
+func displayMenu() {
+	fmt.Println("\nAvailable Commands:")
+	fmt.Println("1. put <key> <attribute1> <value1> [<attribute2> <value2> ...]")
+	fmt.Println("   Example: put user1 name John age 30")
+	fmt.Println("2. get <key>")
+	fmt.Println("   Example: get user1")
+	fmt.Println("3. delete <key>")
+	fmt.Println("   Example: delete user1")
+	fmt.Println("4. search <attribute> <value>")
+	fmt.Println("   Example: search age 30")
+	fmt.Println("5. keys")
+	fmt.Println("   Lists all keys in the store")
+	fmt.Println("6. help")
+	fmt.Println("   Display this menu")
+	fmt.Println("7. exit")
+	fmt.Println("   Exit the program")
+	fmt.Println("\nEnter your command:")
+}
+
 func main() {
 	store := NewStore()
 	scanner := bufio.NewScanner(os.Stdin)
-	fmt.Println("Please input command and param")
-	for scanner.Scan() {
+	
+	fmt.Println("Welcome to the Key-Value Store CLI")
+	displayMenu()
 
+	for scanner.Scan() {
 		line := scanner.Text()
 		parts := strings.Fields(line)
 		if len(parts) == 0 {
+			displayMenu()
 			continue
 		}
 
@@ -167,7 +191,8 @@ func main() {
 		switch command {
 		case "put":
 			if len(parts) < 4 || len(parts)%2 != 0 {
-				fmt.Println("Number of params is incorrect")
+				fmt.Println("Error: Incorrect number of parameters")
+				fmt.Println("Usage: put <key> <attribute1> <value1> [<attribute2> <value2> ...]")
 				continue
 			}
 			key := parts[1]
@@ -176,18 +201,21 @@ func main() {
 				attributes = append(attributes, []string{parts[i], parts[i+1]})
 			}
 			if err := store.Put(key, attributes); err != nil {
-				fmt.Println("Data Type Error")
+				fmt.Println("Error: Data Type Error")
+			} else {
+				fmt.Println("Success: Put operation completed")
 			}
-			fmt.Println("Put is done")
 
 		case "get":
 			if len(parts) != 2 {
+				fmt.Println("Error: Incorrect number of parameters")
+				fmt.Println("Usage: get <key>")
 				continue
 			}
 			key := parts[1]
 			value := store.Get(key)
 			if value == nil {
-				fmt.Printf("No entry found for %s\n", key)
+				fmt.Printf("No entry found for key: %s\n", key)
 				continue
 			}
 
@@ -205,34 +233,48 @@ func main() {
 
 		case "delete":
 			if len(parts) != 2 {
+				fmt.Println("Error: Incorrect number of parameters")
+				fmt.Println("Usage: delete <key>")
 				continue
 			}
 			key := parts[1]
 			store.Delete(key)
-			fmt.Println("Delete is done")
+			fmt.Println("Success: Delete operation completed")
 
 		case "search":
 			if len(parts) != 3 {
+				fmt.Println("Error: Incorrect number of parameters")
+				fmt.Println("Usage: search <attribute> <value>")
 				continue
 			}
 			attrKey, attrValue := parts[1], parts[2]
 			results := store.Search(attrKey, attrValue)
 			if len(results) > 0 {
-				fmt.Println(strings.Join(results, ","))
+				fmt.Println("Found keys:", strings.Join(results, ", "))
 			} else {
-				fmt.Println()
+				fmt.Println("No matching entries found")
 			}
 
 		case "keys":
 			keys := store.Keys()
 			if len(keys) > 0 {
-				fmt.Println(strings.Join(keys, ","))
+				fmt.Println("All keys:", strings.Join(keys, ", "))
 			} else {
-				fmt.Println()
+				fmt.Println("Store is empty")
 			}
 
+		case "help":
+			displayMenu()
+
 		case "exit":
+			fmt.Println("Goodbye!")
 			return
+
+		default:
+			fmt.Printf("Unknown command: %s\n", command)
+			fmt.Println("Type 'help' to see available commands")
 		}
+
+		fmt.Println("\nEnter your command:")
 	}
 }
